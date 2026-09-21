@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ko-KR
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: false
+  poem: false
+  review_status: true
+  review_details: false
+  # 기계가 만든 산출물만 제외함
+  # 사람이 쓴 적이 없으므로 애초에 리뷰할 것이 없음
+  #
+  # dist 는 npm run build 가 만든 배포용 파일, node_modules 는 설치된 라이브러리
+  # package-lock.json 은 npm 이 판을 고정해 적는 파일이라 줄 수만 많고 읽을 것이 없음
+  path_filters:
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!package-lock.json"
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  auto_reply: true
