@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/*
+ * 디자인 토큰 — 값은 명세서 1부 그림(개선안)에서 뽑았다.
+ * 바탕 #F6F0E4 · 주 버튼 #5E8676 · 진한 초록 #4A6A5E · 판정 네 색은 7장 탐색 카운트 숫자.
+ */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+
+  --color-cream: #f6f0e4;
+  --color-field: #fafaf6;
+  --color-ink: #232a25;
+  --color-sub: #5f655f;
+  --color-faint: #9a9d97;
+  --color-line: #e5e0d5;
+
+  --color-brand: #5e8676;
+  --color-brand-strong: #4a6a5e;
+  --color-brand-title: #5e7e72;
+  --color-brand-soft: #e8efe9;
+  --color-brand-disabled: #ccd6ce;
+
+  --color-ok: #2e7d36;
+  --color-ok-soft: #e6f4e8;
+  --color-cond: #e25a0c;
+  --color-cond-soft: #fef1dd;
+  --color-no: #c02a28;
+  --color-no-soft: #fde8ea;
+  --color-unknown: #653cb0;
+  --color-unknown-soft: #f0ebf8;
+
+  --color-alert: #c4382f;
+  --color-alert-soft: #fee9e7;
+  --color-distance: #e07b5f;
+  --color-notice: #fbf4e9;
+
+  --shadow-card: 0 1px 2px rgb(60 50 30 / 0.04), 0 8px 24px rgb(60 50 30 / 0.06);
+  --shadow-float: 0 12px 32px rgb(60 50 30 / 0.12);
+}
+
+@layer components {
+  /* 본문 기둥 — 머리띠는 화면 끝까지, 내용은 이 폭 안에 */
+  .shell {
+    width: 90rem;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+  }
+
+  /* 데스크톱 전용 — 이보다 좁으면 가로로 스크롤된다 */
+  /*
+   * 크기 규칙 — 1440 까지는 창 폭에 맞춰 늘어나고(1280 에서 14.22px · 1440 에서 16px),
+   * 그보다 넓으면 16px 에서 멈춘다. 본문은 90rem(=1440px) 를 넘지 않고 가운데 선다.
+   * 큰 모니터에서 화면이 통째로 확대된 것처럼 보이지 않게 하려는 것이다.
+   */
+  html {
+    font-size: clamp(14.2222px, calc(100vw / 90), 16px);
+    min-width: 1280px;
+    background-color: var(--color-cream);
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes paw-dot {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-dot {
+    animation: none !important;
+  }
+}
