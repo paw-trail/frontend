@@ -210,7 +210,7 @@ auth 만 common 0.0.13 이라 본문을 읽을 수 없는 요청에 400 대신 5
 | `VALIDATION_FAILED` | 400 | common | `data` 배열이면 칸마다 표시 · `null` 이면 폼 구성 문제 |
 | `AUTHENTICATION_FAILED` | 401 | common · 게이트웨이 | 1-4 의 갱신 |
 | `ACCESS_DENIED` | 403 | common · 게이트웨이 | 관리자 화면 접근 막힘 |
-| `RESOURCE_NOT_FOUND` | 404 | common | 없는 경로 · user 프로필이 아직 없음 (가입 직후) |
+| `RESOURCE_NOT_FOUND` | 404 | common | 없는 경로 · user 프로필이 없음 (user v0.2.2 부터는 자가 복구가 되어 탈퇴 표시가 있을 때만) |
 | `METHOD_NOT_ALLOWED` | 405 | common | 개발 중에만 봄 |
 | `INTERNAL_ERROR` | 500 | common · 게이트웨이 | "잠시 후 다시 시도해 주세요" |
 | `EXTERNAL_API_ERROR` | 502 | common | user 가 목록을 조립하다 place 를 못 부름 등 — 그 영역만 "불러오지 못했습니다" |
@@ -415,7 +415,7 @@ search 의 `PLACE_UNAVAILABLE` · `REVIEW_UNAVAILABLE` 은 색인을 채우는 �
 | 영역 | 명세서 | 실물 | 화면이 할 일 |
 |---|---|---|---|
 | ② | `GET /api/v1/auth/me` | 같음 · `{accountId, email, role, authProvider}` | 401 이면 1-4 의 갱신 → 그래도 401 이면 로그인 화면 |
-| ③ | `GET /api/v1/users/me` | 같음 · `ProfileOutput` (아래) | 404 `RESOURCE_NOT_FOUND` 는 가입 직후라 프로필이 아직 없는 것 — 짧게 재시도 (안: 0.5초 간격 다섯 번) |
+| ③ | `GET /api/v1/users/me` | 같음 · `ProfileOutput` (아래) | 404 `RESOURCE_NOT_FOUND` 면 짧게 재시도 (안: 0.5초 간격 다섯 번) · ⚠user v0.2.2 부터 프로필이 없으면 서버가 그 자리에서 만들어 주므로, 이 404 는 탈퇴 표시가 있거나 그 복구가 실패한 경우입니다 |
 | ③ | `GET /api/v1/pets` | 같음 · `PetOutput[]` (5장) | 캐시하지 않음 |
 | ④ | `GET /api/v1/search?lat=&lon=` | 부를 수 있으나 메인이 이 결과를 쓰는 자리가 없음 | (안) 여기서는 위치 권한만 묻고 좌표를 얻음. 메인의 인기 급상승 · 날씨 · 지역 드롭다운이 그 값을 씀 |
 | ⑤ | 미정 — 고정 지역 | 사용자 지역을 저장하는 칸이 없음 (2026.9.3 결정) | (안) 위치를 거부하면 그림의 드롭다운 값 「서울 마포구」 (`sidoCode=11` · `sigunguName=마포구`) |
