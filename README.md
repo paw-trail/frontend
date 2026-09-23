@@ -124,14 +124,14 @@
 | `/api/v1/admin/**` | 경로마다 (auth · pet · place · policy · report · verdict · search) | 관리자 화면 |
 | `/api/v1/places/{placeId}/reviews` · `/reviews/**` | review | 후기 목록 · 작성 · 수정 · 삭제 · 내 후기 · 좋아요 · 태그 목록 · 사진 올릴 주소 |
 | `/api/v1/admin/reviews/{reviewId}` | review | 관리자가 신고된 후기를 내릴 때 |
+| `/api/v1/admin/ingest/runs` | ingest | 21장 「공사 데이터 최신 수집」 실행과 실행 기록 |
 
-게이트웨이를 거치지 않는 것도 셋 있습니다.
+게이트웨이를 거치지 않는 것도 둘 있습니다.
 
 | 가는 곳 | 무엇을 | 언제 |
 |---|---|---|
 | S3 | 반려동물 · 프로필 사진 올리기 (pet · user 가 발급한 서명 주소로 브라우저가 직접) | 사진을 고르고 저장할 때 |
 | 카카오 | 지도 SDK (브라우저가 직접) · 카카오맵 길찾기 새 창 | 상세 · 일정의 지도 · [안내 시작하기] |
-| ingest (개발 중에만) | 관리자 운영 화면의 「공사 데이터 최신 수집」 — 개발 서버가 ingest 의 수집 입구로 넘김 | [6장](#6-개발-서버-프록시) |
 
 ### 0-4. 하지 않는 것
 
@@ -243,7 +243,6 @@ cp .env.example .env.local
 | 이름 | 기본값 | 뜻 |
 |---|---|---|
 | `VITE_API_PROXY_TARGET` | `http://localhost:8080` | 개발 서버가 `/api` 요청을 넘길 곳 (게이트웨이) |
-| `VITE_INGEST_PROXY_TARGET` | `http://localhost:8088` | 개발 서버가 운영 화면의 수집 요청을 넘길 곳 (ingest) — [6장](#6-개발-서버-프록시) |
 | `VITE_KAKAO_MAP_JS_KEY` | 빈 값 | 카카오 지도 JavaScript 키. 비우면 지도 자리에 약도를 그림 |
 | `VITE_FALLBACK_SIDO_CODE` | `11` | 처음 쓸 지역의 시도 코드 (서울) |
 | `VITE_FALLBACK_SIGUNGU_NAME` | `마포구` | 처음 쓸 지역의 시군구 이름 |
@@ -338,7 +337,8 @@ src/
 |---|---|
 | 확인 중 | 스플래시(1장)를 띄움 |
 | 로그인 안 됨 (`/auth/me` 가 401) | `/login` 으로 |
-| 토큰 만료 (401 · `AUTHENTICATION_FAILED`) | `/auth/refresh` 로 한 번 갱신하고 같은 요청을 다시 보냄 · 갱신도 실패하면 로그아웃 처리 |
+| 토큰 만료 (401 · `AUTHENTICATION_FAILED`) | `/auth/refresh` 로 한 번 갱신하고 같은 요청을 다시 보냄 · **갱신이 실패했을 때만** 로그아웃 처리 |
+| 갱신은 됐는데 같은 요청이 또 401 | 로그아웃하지 않고 그 화면에 오류만 보임 — 게이트웨이가 찾지 못한 서비스도 같은 401 로 돌아오기 때문입니다 |
 | 프로필 없음 (`/users/me` 가 404) | 가입 직후엔 프로필이 조금 늦게 생기므로 0.7초 간격으로 7번(약 5초) 다시 부름 → 그래도 없으면 자동 로그아웃 → `/login` 에 「이 계정의 정보를 찾지 못했습니다」 안내 |
 | 로그아웃 · 탈퇴 | `POST /auth/logout`(서버가 만료 쿠키를 내려 줌) → 세션 열쇠를 전부 지움 → `/login` |
 
@@ -435,16 +435,15 @@ html { font-size: clamp(14.2222px, calc(100vw / 90), 16px); min-width: 1280px; }
 
 ## 6. 개발 서버 프록시
 
-### 6-1. 두 갈래
+### 6-1. 한 갈래
 
 `vite.config.ts` 에 있습니다. `npm run dev` 와 `npm run preview` 가 같은 설정을 씁니다.
 
 | 화면이 부르는 주소 | 넘기는 곳 | 비고 |
 |---|---|---|
-| `/api/v1/admin/ingest/runs` | ingest (`VITE_INGEST_PROXY_TARGET` · 기본 `localhost:8088`) | `POST` 는 `/internal/ingest/trigger`, `GET` 은 `/internal/ingest/runs` 로 바꿔 넘김 |
-| 그 밖의 `/api/**` | 게이트웨이 (`VITE_API_PROXY_TARGET` · 기본 `localhost:8080`) | 주소를 그대로 넘김 |
+| `/api/**` | 게이트웨이 (`VITE_API_PROXY_TARGET` · 기본 `localhost:8080`) | 주소를 그대로 넘김 |
 
-위쪽이 더 구체적인 주소라 먼저 걸립니다.
+한때 관리자 수집 요청만 ingest 로 따로 넘기는 갈래가 있었습니다. 게이트웨이에 관리자 입구가 열리면서 지웠습니다.
 
 ### 6-2. 왜 프록시를 두나
 
@@ -455,20 +454,23 @@ html { font-size: clamp(14.2222px, calc(100vw / 90), 16px); min-width: 1280px; }
 ### 6-3. 운영 화면 수집 버튼
 
 21장 「공사 데이터 최신 수집」은 누르면 ingest 가 한국관광공사 OpenAPI 를 그 자리에서 호출해 바뀐 원문을 가져오고, 실행 기록 표에 부른 기능(`petTourSyncList2` · `detailPetTour2` 등)과 건수를 남깁니다.
-ingest 의 수집 입구는 `/internal` 이라 게이트웨이가 넘기지 않으므로, **개발 중에는 개발 서버가 ingest 로 바로 넘깁니다.**
+게이트웨이의 관리자 입구(`ADMIN` 만)를 거치므로 개발과 배포가 같은 경로를 씁니다.
 
 | 요청 | 모양 |
 |---|---|
-| 실행 `POST /api/v1/admin/ingest/runs` | 본문 `{ "source": "PET_TOUR", "runType": "INCREMENTAL" }` (고캠핑은 `GOCAMPING` · `FULL`) → 202 `{ runId }` · 이미 돌고 있으면 409 `INGEST_ALREADY_RUNNING` |
+| 실행 `POST /api/v1/admin/ingest/runs` | 본문 `{ "source": "PET_TOUR", "runType": "INCREMENTAL" }` (고캠핑은 `GOCAMPING` · `FULL`) → 202 `{ runId }` |
+| 실행이 막히는 경우 | 이미 돌고 있으면 409 `INGEST_ALREADY_RUNNING` · 같은 소스를 10분 안에 다시 부르면 429 `INGEST_COOLDOWN` · 화면이 보내지 않는 조합은 400 `INGEST_RUN_NOT_ALLOWED` |
 | 기록 `GET /api/v1/admin/ingest/runs?size=10` | `{ runs: [{ id, source, runType, status, startedAt, finishedAt, fetchedCount, changedCount, progress, errorMessage }] }` |
 
-**배포본에는 이 프록시가 없습니다.** 게이트웨이가 같은 요청 · 응답 모양으로 관리자 수집 입구(`/api/v1/admin/ingest/runs` · `ADMIN` 만)를 열어야 배포한 화면에서도 버튼이 동작합니다.
-그 입구가 열리면 위 표의 첫 줄 프록시는 지우면 됩니다.
+실행 기록의 상태는 「도는 중 · 끝남 · 실패 · 한도 도달 · 중단됨」입니다. **중단됨**은 받아 오다 멈춘 것으로, 다음 실행이 그 자리를 이어받으므로 실패와 다릅니다.
+
+매일 04:00 에도 같은 증분 수집이 예약으로 돕니다. 서버 쪽 스위치가 기본 꺼짐이라 **배포 서버에서 `INGEST_SCHEDULE_ENABLED=true` 로 켜야** 화면의 안내가 사실이 됩니다([6-4](#6-4-배포할-때)).
 
 ### 6-4. 배포할 때
 
 - `npm run build` 가 만든 `dist/` 는 정적 파일입니다. 같은 주소에서 `/api/**` 를 게이트웨이로 넘겨 줄 앞단(nginx 등)이 필요합니다 — 화면은 API 를 늘 같은 주소의 `/api` 로 부르기 때문입니다.
 - 장소 상세처럼 화면 안의 경로에서 새로 고침해도 앞단이 `index.html` 을 내주게 해야 합니다. 경로는 파일이 아니라 화면 안에서 나뉘기 때문입니다.
+- ingest 의 예약 수집 스위치(`INGEST_SCHEDULE_ENABLED`)를 배포 서버에서 켭니다. 운영 화면이 「매일 04:00 에도 저절로 돕니다」라고 안내하기 때문입니다.
 - `VITE_` 값은 **빌드할 때 파일에 박힙니다.** 카카오 키를 바꾸면 다시 빌드해야 합니다. 비밀값은 `VITE_` 로 두지 않습니다(누구나 화면 파일에서 읽을 수 있음).
 
 <br><br>
@@ -616,7 +618,6 @@ ingest 의 수집 입구는 `/internal` 이라 게이트웨이가 넘기지 않�
 
 | 무엇 | 필요한 것 | 그러면 화면은 |
 |---|---|---|
-| 운영 수집 버튼 정리 | — (게이트웨이 관리자 입구와 매일 04:00 예약은 붙었습니다) | `vite.config.ts` 의 ingest 프록시를 지우고, 운영 카드 설명에 예약 실행 한 줄을 되살리고, 10분 잠금(429)과 `INTERRUPTED` 이름표를 더함 |
 | 반려동물 사진 임시 보관 | — (S3 올리기는 고쳐졌습니다) | 사진 임시 보관(`petPhotoStore`)을 걷어 냄 |
 | 가입 닉네임 검사 | — | 닉네임이 비밀번호와 같으면 막기 (제안 단계) |
 | 목록 방식 | — | 알림 · 문의 내역 · 관리자 목록 · 상세 후기는 아직 [더 보기] |

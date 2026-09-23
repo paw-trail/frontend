@@ -142,10 +142,11 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   if (res.status === 401 && envelope?.code === 'AUTHENTICATION_FAILED') {
     if (await refreshOnce()) {
+      // 갱신이 됐으면 세션은 살아 있다. 다시 보냈는데도 401 이면 그 경로의 문제이므로
+      // (게이트웨이가 찾지 못한 서비스도 같은 401 로 돌아온다) 화면에 오류만 보이고 로그인은 유지한다
       res = await send(path, options);
       envelope = await readEnvelope(res);
-    }
-    if (res.status === 401) {
+    } else {
       setTimeout(() => sessionExpiredHandler?.(), 0);
     }
   }
