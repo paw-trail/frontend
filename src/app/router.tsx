@@ -28,6 +28,7 @@ import { PetRegisterPage } from '@/features/pets/PetRegisterPage';
 import { PlaceDetailPage } from '@/features/place/PlaceDetailPage';
 import { RecentPage } from '@/features/recent/RecentPage';
 import { ReviewWritePage } from '@/features/reviews/ReviewWritePage';
+import { PrivacyPage } from '@/features/legal/PrivacyPage';
 import { SearchPage } from '@/features/search/SearchPage';
 
 export const router = createBrowserRouter([
@@ -36,6 +37,8 @@ export const router = createBrowserRouter([
   { path: '/login/success', element: <OAuthSuccessPage /> },
   { path: '/signup', element: <SignupPage /> },
   { path: '/password/reset', element: <PasswordResetPage /> },
+  // 개인정보처리방침 — 로그인 전에도 읽을 수 있어야 해서 RequireSession 바깥에 둔다
+  { path: '/privacy', element: <PrivacyPage /> },
   {
     element: <RequireSession />,
     children: [
