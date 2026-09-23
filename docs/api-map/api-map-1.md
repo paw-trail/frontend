@@ -22,7 +22,7 @@
 | notification-service | v0.1.0 | main 8dd17ae |
 | weather-service | v0.1.0 (0e4b6c5) | develop 23105c9 — 코드는 태그와 같음 |
 
-**믿는 순서는 레포 코드 → 레포 README → config 라우트 → 명세서입니다.** 명세서에서는 화면 그림과 문구만 가져옵니다. 예외는 후기 하나입니다. 후기 서버가 아직 없어 명세서 8 · 9 · 16 · 21장의 후기 요청 · 응답 모양을 브라우저 저장소 구현의 계약으로 씁니다.
+**믿는 순서는 레포 코드 → 레포 README → config 라우트 → 명세서입니다.** 명세서에서는 화면 그림과 문구만 가져옵니다. 예외였던 후기는 2026년 9월 23일에 review v0.1.0 으로 붙어 이제 레포 실물을 따릅니다 (아래 후기 관련 서술은 그 전의 것입니다).
 
 <br><br>
 
@@ -70,7 +70,7 @@
 
 ---
 
-### 1-2. 게이트웨이 라우트 — 18개
+### 1-2. 게이트웨이 라우트 — 20개
 
 `config/gateway-server.yml` 실물입니다. **라우트에 없는 경로는 서비스에 API 가 있어도 게이트웨이가 404 `ROUTE_NOT_FOUND` 를 냅니다.**
 
@@ -81,7 +81,7 @@
 | pet-service | `/api/v1/pets/**` · `/api/v1/breeds` | 1 · 5 · 8 · 9 · 13 | |
 | place-service | `/api/v1/places/{placeId}` · `/api/v1/places/{placeId}/documents` | 8 · 9 | |
 | verdict-service | `/api/v1/places/{placeId}/verdict` | 8 | |
-| review-service | `/api/v1/places/{placeId}/reviews` · `/api/v1/reviews/**` | 부르지 않음 | 서버가 없어 부르면 503. 후기는 브라우저 저장소로 구현 |
+| review-service | `/api/v1/places/{placeId}/reviews` · `/api/v1/reviews/**` | 8 · 9 · 16 | 2026.9.23 부터 실제로 부름 (review v0.1.0) |
 | policy-service | `/api/v1/places/{placeId}/conflicts` | 8 · 19 | |
 | search-service | `/api/v1/search/**` | 1 · 6 · 7 · 8 | `/api/v1/search/map` 은 라우트를 지나 search 에서 404 |
 | report-service | `/api/v1/reports/**` | 8 · 문의 내역 | |
@@ -94,8 +94,10 @@
 | admin-reports | `/api/v1/admin/reports/**` | 17 · 19 · 20 | |
 | admin-verdicts | `/api/v1/admin/verdicts/**` | 21 | 라우트만 있고 API 가 없음 — 판정 캐시 버튼은 비활성 |
 | admin-search | `/api/v1/admin/search/**` | 21 | |
+| admin-reviews | `/api/v1/admin/reviews/**` | 8 | review v0.1.0 과 함께 열림 — 관리자가 남의 후기를 내릴 때 |
+| admin-ingest | `/api/v1/admin/ingest/**` | 21 | 2026.9.22 추가 — 운영 화면의 「최신 수집 실행」 |
 
-관리자 후기 삭제(`/api/v1/admin/reviews/**`) 라우트는 없습니다. 후기가 브라우저 저장소에 있어 이 프론트에는 영향이 없습니다.
+관리자 후기 삭제는 8장 후기 카드에서만 부릅니다. 17장 제보 처리에는 삭제 버튼을 두지 않고, 후기로 가는 링크만 둡니다.
 
 <br><br>
 

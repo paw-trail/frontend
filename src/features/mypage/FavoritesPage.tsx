@@ -1,11 +1,9 @@
 import { useFavorites } from '@/features/favorites/useFavorites';
-import { useRatingAverages } from '@/features/reviews/reviewStore';
 import { Collection } from './Collection';
 
 /** 명세서 14장 즐겨찾기 — 이 화면에서는 빼기만 한다 */
 export function FavoritesPage() {
   const favorites = useFavorites();
-  const ratings = useRatingAverages();
   const items = favorites.cards.map((f) => ({
     placeId: f.placeId,
     name: f.name,
@@ -13,7 +11,7 @@ export function FavoritesPage() {
     imageUrl: f.imageUrl,
     verdict: f.verdict,
     tags: f.requiredItems,
-    rating: ratings.get(f.placeId),
+    rating: f.ratingAvg ?? undefined,
     favorite: true,
   }));
 

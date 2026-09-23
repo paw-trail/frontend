@@ -12,7 +12,6 @@ import { Modal } from '@/components/ui/Modal';
 import { useLocationState } from '@/features/location/LocationProvider';
 import { RouteMap } from '@/features/map/RouteMap';
 import type { MapPoint } from '@/features/map/types';
-import { useRatingAverages } from '@/features/reviews/reviewStore';
 import { todayIso } from '@/lib/format';
 import { kakaoRouteUrl, type RoutePoint } from '@/lib/kakao';
 import { nowLocalIso } from '@/lib/geo';
@@ -35,7 +34,6 @@ export function ItineraryPage() {
   const queryClient = useQueryClient();
   const date = sp.get('date') ?? todayIso();
   const { state: location } = useLocationState();
-  const ratings = useRatingAverages();
   const [routing, setRouting] = useState(false);
   const [deleting, setDeleting] = useState<ItineraryCard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +170,7 @@ export function ItineraryPage() {
                 key={s.stopId}
                 stop={s}
                 order={i + 1}
-                rating={ratings.get(s.placeId)}
+                rating={s.ratingAvg ?? undefined}
                 past={s.visitAt <= now}
                 visiting={visit.isPending && visit.variables === s.stopId}
                 onDelete={() => setDeleting(s)}

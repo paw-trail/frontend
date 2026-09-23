@@ -401,7 +401,9 @@ ReasonOutput         field · label · status (NOT_MET · MISSING · CONDITION �
 
 ### 2-4. 후기 목록 — 브라우저 저장소 계약
 
-**review 서버가 없어, 명세서 8장 ⑩ `GET /api/v1/places/{placeId}/reviews` 의 응답 모양을 브라우저 저장소의 계약으로 씁니다.** 서버가 생기면 `.env` 의 `VITE_REVIEW_MODE` 를 `remote` 로 바꿔 같은 모양으로 부릅니다.
+> ⚠ 2026년 9월 23일 — 후기는 review v0.1.0 에 붙었습니다. 아래 「서버 없음 · 브라우저 저장소」 서술은 그때까지의 것이며, 지금 계약은 레포 README 0-3 · 11장과 review-service README 를 봅니다.
+
+**review 서버가 없어, 명세서 8장 ⑩ `GET /api/v1/places/{placeId}/reviews` 의 응답 모양을 브라우저 저장소의 계약으로 씁니다.** 그 뒤 review v0.1.0 이 나와 실제 API 로 바뀌었고, 반려동물이 여러 마리가 되면서 요청 · 응답 모양도 달라졌습니다 (레포 README 11장).
 
 ```
 content [{

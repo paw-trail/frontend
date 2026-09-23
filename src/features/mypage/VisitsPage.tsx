@@ -9,7 +9,6 @@ import { visitsApi } from '@/api/visits';
 import { VerdictBadge } from '@/components/place/VerdictBadge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { useRatingAverages } from '@/features/reviews/reviewStore';
 import { SortChips, type SortKey } from './SortChips';
 
 type Group = { date: string; visits: VisitCard[]; summary: string | null; avg: number | null };
@@ -21,7 +20,7 @@ const SUMMARY_ERRORS: Record<string, string> = {
 };
 
 // 그날 요약은 하루 한 카드에만 실려 온다 — 날짜로 묶은 뒤 실린 카드에서 꺼낸다 (대조표 3/4 4-1)
-function groupByDate(visits: VisitCard[], ratings: Map<string, number>, sort: SortKey): Group[] {
+function groupByDate(visits: VisitCard[], sort: SortKey): Group[] {
   const byDate = new Map<string, VisitCard[]>();
   for (const v of visits) {
     const date = v.visitedAt.slice(0, 10);
@@ -29,7 +28,7 @@ function groupByDate(visits: VisitCard[], ratings: Map<string, number>, sort: So
   }
   const groups = [...byDate].map(([date, list]) => {
     const sorted = [...list].sort((a, b) => a.visitedAt.localeCompare(b.visitedAt));
-    const rs = sorted.map((v) => ratings.get(v.placeId)).filter((n): n is number => n !== undefined);
+    const rs = sorted.map((v) => v.ratingAvg).filter((n): n is number => n !== null);
     return {
       date,
       visits: sorted,
@@ -51,13 +50,12 @@ function groupByDate(visits: VisitCard[], ratings: Map<string, number>, sort: So
 export function VisitsPage() {
   const queryClient = useQueryClient();
   const visits = useQuery({ queryKey: ['visits'], queryFn: visitsApi.list, staleTime: 15_000 });
-  const ratings = useRatingAverages();
   const [sort, setSort] = useState<SortKey>('all');
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState<VisitCard | null>(null);
   const [notice, setNotice] = useState<{ date: string; text: string } | null>(null);
 
-  const groups = useMemo(() => groupByDate(visits.data ?? [], ratings, sort), [visits.data, ratings, sort]);
+  const groups = useMemo(() => groupByDate(visits.data ?? [], sort), [visits.data, sort]);
 
   const summarize = useMutation({
     mutationFn: (date: string) => visitsApi.summarize(date),
@@ -155,7 +153,7 @@ export function VisitsPage() {
                 {open && (
                   <ul className="space-y-2 border-t border-line px-6 py-4">
                     {g.visits.map((v) => {
-                      const rating = ratings.get(v.placeId);
+                      const rating = v.ratingAvg ?? undefined;
                       return (
                         <li key={v.visitId} className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
                           <Link to={`/places/${v.placeId}`} className="min-w-0 truncate text-[1rem] font-semibold text-ink hover:underline">
