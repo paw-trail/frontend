@@ -7,7 +7,6 @@ import { commonMessage, isApiError } from '@/api/client';
 import type { AdminReportCard, ReportStatus, ReportType } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { isSampleId, resolveSampleReport, sampleCount, useSampleReports } from './sampleAdminData';
-import { useStoredReviews } from '@/features/reviews/reviewStore';
 import { formatDateKo } from '@/lib/format';
 import { REPORT_STATUS_LABEL, REPORT_TYPE_LABEL, reportFieldLabel } from '@/lib/labels';
 
@@ -45,7 +44,7 @@ function fixPath(r: AdminReportCard): string {
     case 'CLOSED':
       return `/admin/places?placeId=${r.placeId}&field=status`;
     case 'REVIEW_ABUSE':
-      return `/places/${r.placeId}#reviews`;
+      return r.targetReviewId ? `/places/${r.placeId}?review=${r.targetReviewId}#reviews` : `/places/${r.placeId}#reviews`;
     default:
       return `/admin/places?placeId=${r.placeId}`;
   }
@@ -148,7 +147,6 @@ export function ReportsAdminPage() {
 function ReportAdminCard({ report: r }: { report: AdminReportCard }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const reviews = useStoredReviews();
   const [memo, setMemo] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -174,7 +172,6 @@ function ReportAdminCard({ report: r }: { report: AdminReportCard }) {
     resolve.mutate(status);
   };
 
-  const review = r.targetReviewId ? reviews.find((x) => x.reviewId === r.targetReviewId) : undefined;
   const pending = r.status === 'PENDING';
 
   return (
@@ -196,7 +193,7 @@ function ReportAdminCard({ report: r }: { report: AdminReportCard }) {
         <p className="mt-2 whitespace-pre-line text-[0.9375rem] leading-relaxed text-ink">{r.content}</p>
         {r.reportType === 'REVIEW_ABUSE' && (
           <p className="mt-2 rounded-lg bg-field px-3 py-2 text-[0.8125rem] text-sub">
-            {review ? `신고된 후기: "${review.content.slice(0, 80)}${review.content.length > 80 ? '…' : ''}"` : '후기는 쓴 사람의 브라우저에 저장돼 있어, 이 브라우저에서는 내용을 볼 수 없습니다.'}
+            신고된 후기는 [후기 보러 가기] 로 확인하고, 내릴 때는 그 후기 카드의 [삭제] 를 누릅니다.
           </p>
         )}
         <div className="mt-3 flex items-center justify-between gap-3">
@@ -210,7 +207,7 @@ function ReportAdminCard({ report: r }: { report: AdminReportCard }) {
             onClick={() => navigate(fixPath(r))}
             className="h-7 shrink-0 rounded-full border border-line px-3 text-[0.75rem] font-semibold text-sub hover:text-ink disabled:opacity-40 disabled:hover:text-sub"
           >
-            정정하러 가기
+            {r.reportType === 'REVIEW_ABUSE' ? '후기 보러 가기' : '정정하러 가기'}
           </button>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { qk } from '@/api/keys';
 import { PhotoUploadError } from '@/api/pets';
 import { placesApi } from '@/api/places';
 import { reviewsApi, type ReviewUpdateBody } from '@/api/reviews';
-import type { MyReview } from '@/api/types';
+import type { MyReview, PlaceReview } from '@/api/types';
 import { PlaceImage } from '@/components/place/PlaceImage';
 import { Button } from '@/components/ui/Button';
 import { usePets, useProfile } from '@/features/auth/session';
@@ -68,12 +68,16 @@ export function ReviewWritePage() {
 
   const petList = pets.data ?? [];
   const editId = params.get('edit');
-  /** 16장 목록에서 넘겨 준 값 — 있으면 기다리지 않고 바로 채운다 */
-  const passed = (location.state as { review?: MyReview } | null)?.review;
+  /*
+   * 목록에서 넘겨 준 값 — 있으면 기다리지 않고 바로 채운다.
+   * 8장 후기 카드에서 왔으면 문항 점수까지 들어 있어 원본을 찾으러 가지 않아도 된다.
+   */
+  const passed = (location.state as { review?: MyReview | PlaceReview } | null)?.review;
+  const passedFull = passed && 'facilityScore' in passed ? passed : null;
 
   const original = useQuery({
     queryKey: ['reviewOriginal', placeId, editId],
-    enabled: Boolean(editId),
+    enabled: Boolean(editId) && !passedFull,
     staleTime: 30_000,
     queryFn: async () => {
       for (let page = 0; page < LOOKUP_PAGES; page += 1) {
@@ -92,7 +96,9 @@ export function ReviewWritePage() {
     return v && v <= todayIso() ? v : todayIso();
   });
   const [petIds, setPetIds] = useState<string[]>(() => (profile.data?.defaultPetId ? [profile.data.defaultPetId] : []));
-  const [scores, setScores] = useState<Record<ScoreKey, number>>({ facility: 0, rule: 0, mood: 0 });
+  const [scores, setScores] = useState<Record<ScoreKey, number>>(() =>
+    passedFull ? { facility: passedFull.facilityScore, rule: passedFull.ruleScore, mood: passedFull.moodScore } : { facility: 0, rule: 0, mood: 0 },
+  );
   const [rating, setRating] = useState(() => passed?.rating ?? 0);
   const [hover, setHover] = useState(0);
   const [content, setContent] = useState(() => passed?.content ?? '');
@@ -131,7 +137,7 @@ export function ReviewWritePage() {
   }, [editId, original.data, passed, seeded]);
 
   const baseline = useMemo(() => {
-    const found = original.data;
+    const found = original.data ?? passedFull;
     if (found) {
       return {
         rating: found.rating as number | null,
@@ -147,10 +153,11 @@ export function ReviewWritePage() {
       return { rating: passed.rating, facility: null, rule: null, mood: null, content: passed.content, photos: passed.photos, tags: passed.tags };
     }
     return { rating: null, facility: null, rule: null, mood: null, content: null, photos: null, tags: null };
-  }, [original.data, passed]);
+  }, [original.data, passed, passedFull]);
 
   const selectedPets = petIds.map((id) => petList.find((p) => p.petId === id)).filter((p) => p !== undefined);
   const lockedPets = (original.data?.pets ?? passed?.pets ?? []).map((p) => p.breedName ?? '견종 미등록').join(', ');
+  // 8장에서 온 값에는 장소 이름이 없다 — 그 화면은 장소 상세를 이미 부르고 있어 제목은 그쪽에서 나온다
   const scoresUnknown = Boolean(editId) && baseline.facility === null;
 
   const addPhotos = async (files: FileList | null) => {
@@ -253,7 +260,7 @@ export function ReviewWritePage() {
   return (
     <main className="px-16 pb-16 pt-9">
       <h1 className="text-[2.25rem] font-extrabold tracking-[-0.02em] text-ink">
-        "{place.data?.name ?? passed?.placeName ?? '…'}" {editId ? '후기 고치기' : '후기 남기기'}
+        "{place.data?.name ?? (passed && 'placeName' in passed ? passed.placeName : null) ?? '…'}" {editId ? '후기 고치기' : '후기 남기기'}
       </h1>
       <p className="mt-1 text-[1.0625rem] text-sub">{editId ? '평점 · 글 · 사진 · 태그를 고칠 수 있어요.' : '이번 여정은 어땠는지 기록해주세요.'}</p>
 

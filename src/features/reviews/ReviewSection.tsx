@@ -219,6 +219,7 @@ export function ReviewSection({ placeId, onReport, onCount }: Props) {
               focused={r.reviewId === focusId}
               onLike={() => me.data && toggleLike.mutate({ reviewId: r.reviewId, liked: r.likedByMe })}
               onReport={() => onReport({ reviewId: r.reviewId, author: r.author.nickname ?? '알 수 없음' })}
+              onEdit={() => navigate(`/places/${placeId}/review?edit=${r.reviewId}`, { state: { review: r } })}
               onDelete={() => setDeleting(r)}
             />
           ))

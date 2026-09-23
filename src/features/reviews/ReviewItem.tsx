@@ -9,11 +9,12 @@ type Props = {
   focused?: boolean;
   onLike: () => void;
   onReport: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 };
 
 /** 8장 후기 한 건 — 작성자 · 반려동물 스냅샷 · 방문일 · 평점 · 본문 · 사진 · 태그 · 좋아요 */
-export function ReviewItem({ review: r, focused = false, onLike, onReport, onDelete }: Props) {
+export function ReviewItem({ review: r, focused = false, onLike, onReport, onEdit, onDelete }: Props) {
   const nickname = r.author.nickname ?? '알 수 없음';
   return (
     <article
@@ -41,6 +42,11 @@ export function ReviewItem({ review: r, focused = false, onLike, onReport, onDel
           {!r.isMine && (
             <button type="button" onClick={onReport} className="h-7 rounded-full border border-line px-2.5 text-[0.75rem] text-sub hover:text-ink">
               신고
+            </button>
+          )}
+          {r.isMine && (
+            <button type="button" onClick={onEdit} className="h-7 rounded-full border border-line px-2.5 text-[0.75rem] text-sub hover:text-ink">
+              수정
             </button>
           )}
           {r.canDelete && (

@@ -2,7 +2,6 @@ import { PawPrint, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { MY_PHOTO_KEY, petKey, useLocalPhoto, useLocalPhotos } from '@/features/pets/petPhotoStore';
 import { useAuthMe, usePets, useProfile } from '@/features/auth/session';
-import { useStoredReviews } from '@/features/reviews/reviewStore';
 import { BREED_SIZE_LABEL } from '@/lib/labels';
 import { sizeFromWeight } from '@/features/pets/petRules';
 
@@ -13,16 +12,14 @@ export function ProfileCard() {
   const photos = useLocalPhotos();
   const myPhoto = useLocalPhoto(MY_PHOTO_KEY, profile.data?.profileImageUrl);
   const pets = usePets();
-  const reviews = useStoredReviews();
 
   const list = pets.data ?? [];
   // user 가 반려동물 삭제 이벤트를 받지 않아 defaultPetId 가 지워진 아이를 가리킬 수 있다 (대조표 3/4 4-2)
   const pet = list.find((p) => p.petId === profile.data?.defaultPetId) ?? list[0] ?? null;
-  const myReviews = me.data ? reviews.filter((r) => r.accountId === me.data.accountId).length : 0;
   // 숫자를 누르면 그 목록으로 간다
   const stats: [string, number | undefined, string][] = [
     ['방문한 장소', profile.data?.stats.visitCount, '/mypage/visited'],
-    ['작성한 후기', profile.data?.stats.reviewCount ?? myReviews, '/mypage/reviews'],
+    ['작성한 후기', profile.data?.stats.reviewCount ?? undefined, '/mypage/reviews'],
     ['즐겨찾기', profile.data?.stats.favoriteCount, '/mypage/favorites'],
   ];
 

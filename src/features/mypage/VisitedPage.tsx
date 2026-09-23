@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import type { VisitCard } from '@/api/types';
 import { visitsApi } from '@/api/visits';
 import { useFavorites } from '@/features/favorites/useFavorites';
-import { useRatingAverages } from '@/features/reviews/reviewStore';
 import { Collection } from './Collection';
 
 /**
@@ -13,7 +12,6 @@ import { Collection } from './Collection';
 export function VisitedPage() {
   const visits = useQuery({ queryKey: ['visits'], queryFn: visitsApi.list, staleTime: 15_000 });
   const favorites = useFavorites();
-  const ratings = useRatingAverages();
 
   const places = useMemo(() => {
     const byPlace = new Map<string, { latest: VisitCard; count: number }>();
@@ -33,7 +31,7 @@ export function VisitedPage() {
     verdict: v.verdictAtVisit,
     tags: v.requiredItems,
     note: `${v.visitedAt.slice(0, 10).replace(/-/g, '.')} 방문${count > 1 ? ` · ${count}번` : ''}`,
-    rating: ratings.get(v.placeId),
+    rating: v.ratingAvg ?? undefined,
     favorite: favorites.loaded ? favorites.ids.has(v.placeId) : v.isFavorite,
   }));
 

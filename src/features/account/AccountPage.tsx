@@ -14,7 +14,6 @@ import { Modal } from '@/components/ui/Modal';
 import { TextField } from '@/components/ui/TextField';
 import { authMessage, PASSWORD_HINT, PASSWORD_TOO_LONG } from '@/features/auth/messages';
 import { useAuthMe, useProfile } from '@/features/auth/session';
-import { reviewStore } from '@/features/reviews/reviewStore';
 import { utf8Bytes } from '@/lib/format';
 import { applyFieldErrors } from '@/lib/forms';
 import { useCountdown } from '@/lib/hooks';
@@ -150,7 +149,7 @@ export function AccountPage() {
 
         <Card title="탈퇴">
           <p className="text-[0.9375rem] leading-relaxed text-sub">
-            탈퇴하면 즐겨찾기 · 일정 · 방문 기록 · 반려동물 정보와 이 브라우저에 남긴 후기가 지워지고 되돌릴 수 없습니다.
+            탈퇴하면 즐겨찾기 · 일정 · 방문 기록 · 반려동물 정보와 남긴 후기가 지워지고 되돌릴 수 없습니다.
           </p>
           <Button variant="outline" className="mt-4 text-alert" onClick={() => setWithdrawOpen(true)}>
             탈퇴하기
@@ -229,7 +228,7 @@ function PasswordCard() {
   );
 }
 
-/** 탈퇴 — 코드 메일을 받아 6자리를 넣고 탈퇴한다. 브라우저 저장소의 내 후기도 함께 지운다 */
+/** 탈퇴 — 코드 메일을 받아 6자리를 넣고 탈퇴한다. 후기는 서버가 account.withdrawn 을 받아 정리한다 */
 function WithdrawModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -258,7 +257,6 @@ function WithdrawModal({ onClose }: { onClose: () => void }) {
     setBusy(true);
     try {
       await authApi.withdraw(code);
-      if (me.data) reviewStore.removeByAccount(me.data.accountId);
       clearSessionPrefs();
       queryClient.clear();
       navigate('/login', { replace: true, state: { notice: '탈퇴를 마쳤습니다. 그동안 함께해 주셔서 고맙습니다.' } });
