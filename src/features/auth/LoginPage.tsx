@@ -133,6 +133,13 @@ export function LoginPage() {
             구글로 계속하기
           </button>
         </div>
+
+        {/* 쓰던 화면을 잃지 않게 새 창으로 연다 */}
+        <p className="mt-6 text-center text-[0.75rem] text-faint">
+          <a href="/privacy" target="_blank" rel="noreferrer" className="hover:text-sub hover:underline">
+            개인정보처리방침
+          </a>
+        </p>
       </AuthCard>
 
       {oauthError && (
