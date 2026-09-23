@@ -8,7 +8,6 @@ import { commonMessage, isApiError } from '@/api/client';
 import { qk } from '@/api/keys';
 import { PHOTO_MAX_BYTES, PHOTO_TYPES, PhotoUploadError } from '@/api/pets';
 import { usersApi } from '@/api/users';
-import { MY_PHOTO_KEY, removeLocalPhoto, saveLocalPhoto, useLocalPhoto } from '@/features/pets/petPhotoStore';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { TextField } from '@/components/ui/TextField';
@@ -26,7 +25,7 @@ export function AccountPage() {
   const queryClient = useQueryClient();
   const me = useAuthMe();
   const profile = useProfile();
-  const myPhoto = useLocalPhoto(MY_PHOTO_KEY, profile.data?.profileImageUrl);
+  const myPhoto = profile.data?.profileImageUrl ?? null;
   const isLocal = me.data?.authProvider === 'LOCAL';
 
   const [nickname, setNickname] = useState(profile.data?.nickname ?? '');
@@ -61,15 +60,8 @@ export function AccountPage() {
     if (!(PHOTO_TYPES as readonly string[]).includes(file.type)) return setProfileMsg({ ok: false, text: 'JPG, PNG 사진만 올릴 수 있습니다.' });
     if (file.size > PHOTO_MAX_BYTES) return setProfileMsg({ ok: false, text: '20MB 이하 사진만 올릴 수 있습니다.' });
     void run(async () => {
-      try {
-        const url = await usersApi.uploadProfilePhoto(file);
-        await usersApi.updateProfile({ profileImageUrl: url });
-        removeLocalPhoto(MY_PHOTO_KEY);
-      } catch (e) {
-        // 사진 저장소로 못 올리면 이 브라우저에만 담아 둔다
-        if (!(e instanceof PhotoUploadError)) throw e;
-        await saveLocalPhoto(MY_PHOTO_KEY, file);
-      }
+      const url = await usersApi.uploadProfilePhoto(file);
+      await usersApi.updateProfile({ profileImageUrl: url });
     }, '프로필 사진을 바꿨습니다.');
   };
 
@@ -96,10 +88,7 @@ export function AccountPage() {
                 사진 바꾸기
               </Button>
               {myPhoto && (
-                <Button variant="outline" disabled={busy} onClick={() => void run(() => (async () => {
-                  removeLocalPhoto(MY_PHOTO_KEY);
-                  if (profile.data?.profileImageUrl) await usersApi.updateProfile({ profileImageUrl: null });
-                })(), '프로필 사진을 지웠습니다.')}>
+                <Button variant="outline" disabled={busy} onClick={() => void run(() => usersApi.updateProfile({ profileImageUrl: null }), '프로필 사진을 지웠습니다.')}>
                   사진 지우기
                 </Button>
               )}

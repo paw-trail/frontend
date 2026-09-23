@@ -1,12 +1,11 @@
 import type { Pet } from '@/api/types';
 import { BREED_SIZE_LABEL } from '@/lib/labels';
-import { petKey, useLocalPhoto } from './petPhotoStore';
 import { formatWeight, sizeFromWeight } from './petRules';
 
 /** 5장 오른쪽 「등록된 우리아이들 정보」 한 마리 */
 export function PetSummary({ pet, isDefault }: { pet: Pet; isDefault: boolean }) {
   const size = pet.breedSize ?? sizeFromWeight(pet.weightKg);
-  const photo = useLocalPhoto(petKey(pet.petId), pet.photoUrl);
+  const photo = pet.photoUrl;
   const info = [
     pet.vaccineCompleted ? '접종 완료' : '미접종',
     pet.vaccineProofAvailable ? '증명서 있음' : null,
