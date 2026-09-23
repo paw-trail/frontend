@@ -16,4 +16,11 @@ export const qk = {
   regions: ['regions'] as const,
   suggest: (q: string) => ['suggest', q] as const,
   weather: (q: WeatherQuery | null) => ['weather', q] as const,
+  placeReviews: (placeId: string, sort: string, photoOnly: boolean, page: number) =>
+    ['placeReviews', placeId, sort, photoOnly, page] as const,
+  /** 그 장소의 후기 열쇠 전부 — 쓰거나 지운 뒤 무효화에 쓴다 */
+  placeReviewsAll: (placeId: string) => ['placeReviews', placeId] as const,
+  myReviews: (sort: string, page: number) => ['myReviews', sort, page] as const,
+  myReviewsAll: ['myReviews'] as const,
+  reviewTags: ['reviewTags'] as const,
 };

@@ -320,3 +320,57 @@ export type PolicyAdmin = {
   fields: PolicyFields;
   correction: { source: 'MANUAL' | 'OWNER'; reason: string; correctedAt: string } | null;
 };
+
+/*
+ * 후기 — review v0.1.0.
+ * 장소 후기와 내 후기가 담는 칸이 다르다 (내 후기는 작성자가 나라서 체중을 다시 보이지 않는다).
+ */
+
+/** 후기에 남은 반려동물 스냅샷 — 쓸 때 복사한 그날 값이라 지금 값과 다를 수 있다 */
+export type ReviewPet = { breedName: string | null; weightKg: number | null; breedSize: BreedSize | null };
+export type MyReviewPet = { breedName: string | null; breedSize: BreedSize | null };
+
+export type PlaceReview = {
+  reviewId: string;
+  rating: number;
+  facilityScore: number;
+  ruleScore: number;
+  moodScore: number;
+  content: string;
+  /** 서명된 보기 주소 (1시간) · 수정할 때 그대로 돌려보내면 서버가 키만 뽑는다 */
+  photos: string[];
+  tags: string[];
+  likeCount: number;
+  likedByMe: boolean;
+  isMine: boolean;
+  /** 내 후기이거나 내가 관리자일 때 참 */
+  canDelete: boolean;
+  visitedAt: string;
+  author: { nickname: string | null; profileImageUrl: string | null };
+  pets: ReviewPet[];
+};
+
+/** 평균 넷은 후기가 없으면 0.0 으로 온다 (null 아님) · 거르기 · 쪽과 무관한 장소 전체 값 */
+export type ReviewSummary = {
+  ratingAvg: number;
+  facilityAvg: number;
+  ruleAvg: number;
+  moodAvg: number;
+  reviewCount: number;
+};
+
+export type PlaceReviewList = PageResponse<PlaceReview> & { summary: ReviewSummary };
+
+export type MyReview = {
+  reviewId: string;
+  placeId: string;
+  /** place 를 못 불렀으면 null 로 온다 (목록은 그대로 나간다) */
+  placeName: string | null;
+  rating: number;
+  content: string;
+  photos: string[];
+  tags: string[];
+  likeCount: number;
+  visitedAt: string;
+  pets: MyReviewPet[];
+};

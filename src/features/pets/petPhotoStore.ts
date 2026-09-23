@@ -41,9 +41,19 @@ export const petKey = (petId: string) => `pet:${petId}`;
 /** 내 프로필 사진 열쇠 */
 export const MY_PHOTO_KEY = 'user:me';
 
-/** 고른 파일을 줄여서 담는다 */
+/**
+ * 고른 파일을 줄여서 담는다.
+ * shrinkPhoto 는 올릴 파일을 돌려주므로 여기서만 data URL 로 바꿔 담는다
+ * (이 저장소는 S3 우회용이라 사진 올리기가 풀리면 통째로 걷어 낸다).
+ */
 export async function saveLocalPhoto(key: string, file: File): Promise<void> {
-  const dataUrl = await shrinkPhoto(file);
+  const small = await shrinkPhoto(file);
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('사진을 읽지 못했습니다'));
+    reader.readAsDataURL(small);
+  });
   write({ ...read(), [key]: dataUrl });
 }
 
