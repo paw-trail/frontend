@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { PenLine, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { commonMessage } from '@/api/client';
 import { qk } from '@/api/keys';
@@ -56,6 +56,11 @@ export function MyReviewsPage() {
 
   const reviews = list.data?.content ?? [];
   const totalPages = list.data?.page.totalPages ?? 1;
+
+  // 마지막 쪽의 마지막 후기를 지우면 그 쪽이 사라진다 — 빈 쪽에 갇히지 않게 뒤로 당긴다
+  useEffect(() => {
+    if (list.data && page > totalPages) setPage(Math.max(1, totalPages));
+  }, [list.data, page, totalPages]);
 
   return (
     <section>

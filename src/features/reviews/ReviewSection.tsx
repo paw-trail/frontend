@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Camera } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { commonMessage } from '@/api/client';
 import { qk } from '@/api/keys';
@@ -60,11 +60,20 @@ export function ReviewSection({ placeId, onReport, onCount }: Props) {
     if (summary) onCount?.(summary.reviewCount);
   }, [summary, onCount]);
 
-  // 17장 「후기 보러 가기」로 왔을 때 — 그 후기가 있는 쪽까지 받아 열고 자리로 옮긴다
+  /*
+   * 17장 「후기 보러 가기」로 왔을 때 — 그 후기가 있는 쪽까지 받아 열고 자리로 옮긴다.
+   *
+   * 한 번 처리하면 끝낸 것으로 표시한다. 목록이 바뀔 때마다 다시 돌면
+   * 좋아요를 누르거나 정렬을 바꿀 때 화면이 그 자리로 되돌아가고,
+   * 다른 조건의 목록에 그 후기가 없다고 「지워졌을 수 있습니다」가 잘못 뜬다.
+   */
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = list;
+  const handledFocus = useRef<string | null>(null);
   useEffect(() => {
     if (!focusId || !data) return;
+    if (handledFocus.current === focusId) return;
     if (data.pages.some((p) => p.content.some((r) => r.reviewId === focusId))) {
+      handledFocus.current = focusId;
       document.getElementById(`review-${focusId}`)?.scrollIntoView({ block: 'center' });
       return;
     }
@@ -72,6 +81,7 @@ export function ReviewSection({ placeId, onReport, onCount }: Props) {
       void fetchNextPage();
       return;
     }
+    handledFocus.current = focusId;
     setFocusMissing(true);
   }, [data, fetchNextPage, focusId, hasNextPage, isFetchingNextPage]);
 

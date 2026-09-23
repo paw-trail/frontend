@@ -95,7 +95,8 @@ export function ReviewWritePage() {
     const v = params.get('visitedAt');
     return v && v <= todayIso() ? v : todayIso();
   });
-  const [petIds, setPetIds] = useState<string[]>(() => (profile.data?.defaultPetId ? [profile.data.defaultPetId] : []));
+  // 대표 반려동물은 아래 effect 가 목록과 대조해 고른다 — 지워진 아이를 가리킬 수 있어 그대로 넣지 않는다
+  const [petIds, setPetIds] = useState<string[]>([]);
   const [scores, setScores] = useState<Record<ScoreKey, number>>(() =>
     passedFull ? { facility: passedFull.facilityScore, rule: passedFull.ruleScore, mood: passedFull.moodScore } : { facility: 0, rule: 0, mood: 0 },
   );
@@ -121,8 +122,9 @@ export function ReviewWritePage() {
   }, [editId, petIds.length, petList, profile.data?.defaultPetId]);
 
   // 원본을 찾으면 화면을 채운다 (넘겨받은 값이 있으면 문항별 별점만)
+  // 다시 받는 중에는 채우지 않는다 — 낡은 캐시 값으로 채우면 고치지 않은 칸이 PATCH 에 실린다
   useEffect(() => {
-    if (!editId || seeded) return;
+    if (!editId || seeded || original.isFetching) return;
     const found = original.data;
     if (!found) return;
     setScores({ facility: found.facilityScore, rule: found.ruleScore, mood: found.moodScore });
@@ -134,7 +136,7 @@ export function ReviewWritePage() {
       setPhotos(found.photos.map((url) => ({ key: url, preview: url, url })));
     }
     setSeeded(true);
-  }, [editId, original.data, passed, seeded]);
+  }, [editId, original.data, original.isFetching, passed, seeded]);
 
   const baseline = useMemo(() => {
     const found = original.data ?? passedFull;
@@ -193,6 +195,8 @@ export function ReviewWritePage() {
   };
 
   const refresh = () => {
+    // 고친 뒤 다시 열었을 때 옛 원본이 남아 있지 않게 아예 버린다
+    queryClient.removeQueries({ queryKey: ['reviewOriginal', placeId] });
     void queryClient.invalidateQueries({ queryKey: qk.placeReviewsAll(placeId) });
     void queryClient.invalidateQueries({ queryKey: qk.myReviewsAll });
     void queryClient.invalidateQueries({ queryKey: qk.profile });
