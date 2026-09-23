@@ -70,7 +70,7 @@
 
 ---
 
-### 1-2. 게이트웨이 라우트 — 19개
+### 1-2. 게이트웨이 라우트 — 20개
 
 `config/gateway-server.yml` 실물입니다. **라우트에 없는 경로는 서비스에 API 가 있어도 게이트웨이가 404 `ROUTE_NOT_FOUND` 를 냅니다.**
 
@@ -94,9 +94,10 @@
 | admin-reports | `/api/v1/admin/reports/**` | 17 · 19 · 20 | |
 | admin-verdicts | `/api/v1/admin/verdicts/**` | 21 | 라우트만 있고 API 가 없음 — 판정 캐시 버튼은 비활성 |
 | admin-search | `/api/v1/admin/search/**` | 21 | |
+| admin-reviews | `/api/v1/admin/reviews/**` | 8 | review v0.1.0 과 함께 열림 — 관리자가 남의 후기를 내릴 때 |
 | admin-ingest | `/api/v1/admin/ingest/**` | 21 | 2026.9.22 추가 — 운영 화면의 「최신 수집 실행」 |
 
-관리자 후기 삭제(`/api/v1/admin/reviews/**`)는 review v0.1.0 과 함께 열렸습니다. 8장 후기 카드에서 관리자가 남의 후기를 내릴 때 씁니다.
+관리자 후기 삭제는 8장 후기 카드에서만 부릅니다. 17장 제보 처리에는 삭제 버튼을 두지 않고, 후기로 가는 링크만 둡니다.
 
 <br><br>
 
