@@ -9,7 +9,6 @@ import { VerdictBadge } from '@/components/place/VerdictBadge';
 import { Button } from '@/components/ui/Button';
 import { useBasis } from '@/features/basis/BasisProvider';
 import { ReviewSection } from '@/features/reviews/ReviewSection';
-import { useStoredReviews } from '@/features/reviews/reviewStore';
 import { formatPhone } from '@/lib/format';
 import { DocumentsModal } from './DocumentsModal';
 import { FacilitySection } from './FacilitySection';
@@ -49,7 +48,8 @@ export function PlaceDetailPage() {
     enabled: verdict.data?.hasConflict === true,
     staleTime: 5 * 60_000,
   });
-  const reviewCount = useStoredReviews().filter((r) => r.placeId === placeId).length;
+  // 후기 수는 후기 구역이 받아 온 요약에서 올려 준다 (같은 값을 두 번 부르지 않게)
+  const [reviewCount, setReviewCount] = useState(0);
   useRecordView(place.isSuccess ? placeId : undefined);
 
   // 후기를 쓰고 돌아오면 후기 구역으로 (9장 → /places/{id}#reviews)
@@ -186,7 +186,7 @@ export function PlaceDetailPage() {
             <FacilitySection place={p} verdict={verdict.data} verdictStatus={verdict.status} pets={selected} onOpenDocuments={() => setDocsOpen(true)} />
           </div>
           <RulesSection verdict={verdict.data} pets={selected} conflicts={conflicts.data} conflictsStatus={conflicts.status} />
-          <ReviewSection placeId={p.placeId} onReport={(review) => setReport({ review })} />
+          <ReviewSection placeId={p.placeId} onReport={(review) => setReport({ review })} onCount={setReviewCount} />
         </div>
 
         <aside className="sticky top-[6rem] space-y-5">

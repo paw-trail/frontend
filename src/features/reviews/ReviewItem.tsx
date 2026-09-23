@@ -1,35 +1,38 @@
 import { Star, ThumbsUp } from 'lucide-react';
+import type { PlaceReview } from '@/api/types';
 import { formatDateKo } from '@/lib/format';
-import type { ReviewView } from './reviewStore';
+import { PetBadges } from './PetBadges';
 
 type Props = {
-  review: ReviewView;
+  review: PlaceReview;
+  /** 17장 신고 처리에서 「후기 보러 가기」로 왔을 때 그 후기 */
+  focused?: boolean;
   onLike: () => void;
   onReport: () => void;
   onDelete: () => void;
 };
 
 /** 8장 후기 한 건 — 작성자 · 반려동물 스냅샷 · 방문일 · 평점 · 본문 · 사진 · 태그 · 좋아요 */
-export function ReviewItem({ review: r, onLike, onReport, onDelete }: Props) {
+export function ReviewItem({ review: r, focused = false, onLike, onReport, onDelete }: Props) {
+  const nickname = r.author.nickname ?? '알 수 없음';
   return (
-    <article className="rounded-2xl bg-white px-7 py-6 shadow-card">
+    <article
+      id={`review-${r.reviewId}`}
+      className={`scroll-mt-28 rounded-2xl bg-white px-7 py-6 shadow-card ${focused ? 'ring-2 ring-brand-strong' : ''}`}
+    >
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           {r.author.profileImageUrl ? (
             <img src={r.author.profileImageUrl} alt="" className="size-11 rounded-full object-cover" />
           ) : (
             <span className="grid size-11 place-items-center rounded-full bg-brand-soft text-[1rem] font-bold text-brand-strong" aria-hidden>
-              {r.author.nickname.slice(0, 1)}
+              {nickname.slice(0, 1)}
             </span>
           )}
           <div>
             <p className="flex flex-wrap items-center gap-2">
-              <span className="text-[1rem] font-bold text-ink">{r.author.nickname}</span>
-              {r.petSummary && (
-                <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[0.75rem] font-semibold text-brand-strong">
-                  {r.petSummary.breedName} · {r.petSummary.weightKg}kg
-                </span>
-              )}
+              <span className="text-[1rem] font-bold text-ink">{nickname}</span>
+              <PetBadges pets={r.pets} />
             </p>
             <p className="mt-0.5 text-[0.8125rem] text-faint">{formatDateKo(r.visitedAt)} 방문</p>
           </div>
