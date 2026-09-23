@@ -226,6 +226,14 @@ export function SignupPage() {
             로그인
           </Link>
         </p>
+        {/* 입력하던 값을 잃지 않게 새 창으로 연다 */}
+        <p className="mt-2 text-center text-[0.75rem] text-faint">
+          가입하면 입력한 정보를{' '}
+          <a href="/privacy" target="_blank" rel="noreferrer" className="text-sub underline hover:text-ink">
+            개인정보처리방침
+          </a>
+          에 따라 처리합니다.
+        </p>
       </AuthCard>
     </AuthLayout>
   );
