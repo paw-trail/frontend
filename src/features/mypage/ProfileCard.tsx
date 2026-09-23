@@ -1,6 +1,5 @@
 import { PawPrint, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
-import { MY_PHOTO_KEY, petKey, useLocalPhoto, useLocalPhotos } from '@/features/pets/petPhotoStore';
 import { useAuthMe, usePets, useProfile } from '@/features/auth/session';
 import { BREED_SIZE_LABEL } from '@/lib/labels';
 import { sizeFromWeight } from '@/features/pets/petRules';
@@ -9,8 +8,7 @@ import { sizeFromWeight } from '@/features/pets/petRules';
 export function ProfileCard() {
   const me = useAuthMe();
   const profile = useProfile();
-  const photos = useLocalPhotos();
-  const myPhoto = useLocalPhoto(MY_PHOTO_KEY, profile.data?.profileImageUrl);
+  const myPhoto = profile.data?.profileImageUrl ?? null;
   const pets = usePets();
 
   const list = pets.data ?? [];
@@ -43,8 +41,8 @@ export function ProfileCard() {
 
       {pet ? (
         <div className="flex w-[22rem] shrink-0 items-center gap-4 rounded-xl border border-brand/40 bg-[#edf1ec] px-5 py-3.5">
-          {(photos[petKey(pet.petId)] ?? pet.photoUrl) ? (
-            <img src={photos[petKey(pet.petId)] ?? pet.photoUrl ?? undefined} alt="" className="size-[4.25rem] shrink-0 rounded-full object-cover" />
+          {pet.photoUrl ? (
+            <img src={pet.photoUrl} alt="" className="size-[4.25rem] shrink-0 rounded-full object-cover" />
           ) : (
             <span className="grid size-[4.25rem] shrink-0 place-items-center rounded-full bg-white text-brand-strong">
               <PawPrint className="size-7" aria-hidden />

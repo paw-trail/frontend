@@ -23,7 +23,18 @@ const STATUS_VIEW: Record<IngestRun['status'], { label: string; tone: string }> 
   DONE: { label: '끝남', tone: 'bg-ok-soft text-ok' },
   FAILED: { label: '실패', tone: 'bg-alert-soft text-alert' },
   QUOTA_STOPPED: { label: '한도 도달', tone: 'bg-cond-soft text-cond' },
+  // 받아 오다 멈춘 것 — 다음 실행이 그 자리를 이어받으므로 실패와 색을 달리한다
+  INTERRUPTED: { label: '중단됨', tone: 'bg-cond-soft text-cond' },
 };
+
+function ingestMessage(error: unknown): string {
+  if (isApiError(error, 'INGEST_ALREADY_RUNNING')) return '이미 수집이 돌고 있습니다. 끝난 뒤 다시 눌러 주세요.';
+  // 소스마다 따로 걸린다 — 반려동물이 막혀도 고캠핑은 될 수 있다
+  if (isApiError(error, 'INGEST_COOLDOWN')) return '방금 수집한 뒤 10분 동안은 다시 부를 수 없습니다. 잠시 뒤 다시 눌러 주세요.';
+  // 화면은 두 조합만 보내므로 주소로 직접 부를 때만 나온다
+  if (isApiError(error, 'INGEST_RUN_NOT_ALLOWED')) return '관리자 화면에서는 반려동물 동반여행 증분과 고캠핑 목록만 실행할 수 있습니다.';
+  return commonMessage(error);
+}
 
 function took(r: IngestRun): string {
   if (!r.finishedAt) return '—';
@@ -57,7 +68,7 @@ function IngestCard() {
     onError: (e) =>
       setMsg({
         ok: false,
-        text: isApiError(e, 'INGEST_ALREADY_RUNNING') ? '이미 수집이 돌고 있습니다. 끝난 뒤 다시 눌러 주세요.' : commonMessage(e),
+        text: ingestMessage(e),
       }),
   });
 
@@ -69,8 +80,7 @@ function IngestCard() {
         <div>
           <p className="text-[1.125rem] font-bold text-ink">공사 데이터 최신 수집</p>
           <p className="mt-1 text-[0.875rem] text-sub">
-            {/* 예약 실행(매일 04:00 증분)은 백엔드에 붙인 뒤 이 문장에 덧붙인다 */}
-            한국관광공사 OpenAPI 를 지금 바로 호출해 바뀐 원문을 가져옵니다.
+            한국관광공사 OpenAPI 를 지금 바로 호출해 바뀐 원문을 가져옵니다. 매일 04:00 에도 증분 수집이 저절로 돕니다.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

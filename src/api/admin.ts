@@ -67,14 +67,16 @@ export const adminSearchApi = {
 /**
  * 21장 공사 데이터 최신 수집 — 한국관광공사 OpenAPI 를 그 자리에서 호출해 바뀐 원문을 가져온다.
  * 반려동물 동반여행은 증분(목록 + 바뀐 것만 상세), 고캠핑은 목록 조회 한 번으로 전량.
- * 요청 · 응답 모양은 ingest 의 수집 입구와 같다 (개발 서버는 vite 프록시로 그 입구에 바로 잇는다).
+ * 게이트웨이의 관리자 입구(ADMIN 만)로 부른다. 같은 소스를 10분 안에 다시 부르면 429,
+ * 화면이 보내지 않는 조합은 400 으로 돌아온다. 매일 04:00 예약 실행도 같은 규칙을 쓴다.
  */
 export type IngestSource = 'PET_TOUR' | 'GOCAMPING';
 export type IngestRun = {
   id: string;
   source: string;
-  runType: 'FULL' | 'INCREMENTAL' | 'LINK';
-  status: 'RUNNING' | 'DONE' | 'FAILED' | 'QUOTA_STOPPED';
+  runType: 'FULL' | 'INCREMENTAL' | 'LINK' | 'DIRECT';
+  /** INTERRUPTED 는 받아 오다 멈춘 것 — 다음 실행이 그 자리를 이어받는다 (실패와 다름) */
+  status: 'RUNNING' | 'DONE' | 'FAILED' | 'QUOTA_STOPPED' | 'INTERRUPTED';
   startedAt: string;
   finishedAt: string | null;
   fetchedCount: number;

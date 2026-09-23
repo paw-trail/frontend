@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuthMe, useProfile } from '@/features/auth/session';
 import { useSignOut } from '@/features/auth/useSignOut';
-import { MY_PHOTO_KEY, useLocalPhoto } from '@/features/pets/petPhotoStore';
 
 export function AccountMenu() {
   const me = useAuthMe();
@@ -21,7 +20,7 @@ export function AccountMenu() {
     return () => window.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  const photo = useLocalPhoto(MY_PHOTO_KEY, profile.data?.profileImageUrl);
+  const photo = profile.data?.profileImageUrl ?? null;
 
   return (
     <div ref={box} className="relative">

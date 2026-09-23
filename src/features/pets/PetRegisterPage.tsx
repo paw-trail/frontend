@@ -18,7 +18,6 @@ import { BREED_SIZE_LABEL } from '@/lib/labels';
 import { NicknameInline } from './NicknameInline';
 import { PetSummary } from './PetSummary';
 import { PhotoPicker } from './PhotoPicker';
-import { petKey, saveLocalPhoto } from './petPhotoStore';
 import { WEIGHT_PATTERN, sizeFromWeight } from './petRules';
 
 type PetForm = {
@@ -109,17 +108,7 @@ export function PetRegisterPage() {
     setNotice(null);
     const needsDefault = !profile.data?.defaultPetId;
     try {
-      // S3 로 못 올리면 사진만 이 브라우저에 담아 두고 나머지는 그대로 저장한다
-      let photoUrl: string | undefined;
-      let keepLocally: File | null = null;
-      if (photo) {
-        try {
-          photoUrl = await petsApi.uploadPhoto(photo);
-        } catch (e) {
-          if (!(e instanceof PhotoUploadError)) throw e;
-          keepLocally = photo;
-        }
-      }
+      const photoUrl = photo ? await petsApi.uploadPhoto(photo) : undefined;
       const created = await petsApi.create({
         name: values.name.trim(),
         breedCode: values.breedCode,
@@ -131,8 +120,6 @@ export function PetRegisterPage() {
         vaccineProofAvailable: values.vaccineProofAvailable === true,
         photoUrl,
       });
-
-      if (keepLocally) await saveLocalPhoto(petKey(created.petId), keepLocally);
 
       let defaultError: string | null = null;
       if (needsDefault) {

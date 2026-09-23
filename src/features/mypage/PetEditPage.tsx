@@ -14,7 +14,6 @@ import { SelectField } from '@/components/ui/SelectField';
 import { TextField } from '@/components/ui/TextField';
 import { usePets, useProfile } from '@/features/auth/session';
 import { PhotoPicker } from '@/features/pets/PhotoPicker';
-import { petKey, removeLocalPhoto, saveLocalPhoto, useLocalPhoto } from '@/features/pets/petPhotoStore';
 import { WEIGHT_PATTERN, sizeFromWeight } from '@/features/pets/petRules';
 import { withJosa } from '@/lib/format';
 import { applyFieldErrors } from '@/lib/forms';
@@ -105,7 +104,7 @@ export function PetEditPage() {
   const hasCarrier = watch('hasCarrier');
   const hasStroller = watch('hasStroller');
   const note = watch('note');
-  const localOrServerPhoto = useLocalPhoto(petKey(current?.petId ?? ''), current?.photoUrl);
+  const localOrServerPhoto = current?.photoUrl ?? null;
 
   useEffect(() => {
     if (!WEIGHT_PATTERN.test(weight.trim())) return;
@@ -125,16 +124,7 @@ export function PetEditPage() {
     setPhotoError(null);
     try {
       if (isNew) {
-        let photoUrl: string | undefined;
-        let keepLocally: File | null = null;
-        if (photo) {
-          try {
-            photoUrl = await petsApi.uploadPhoto(photo);
-          } catch (e) {
-            if (!(e instanceof PhotoUploadError)) throw e;
-            keepLocally = photo;
-          }
-        }
+        const photoUrl = photo ? await petsApi.uploadPhoto(photo) : undefined;
         const created = await petsApi.create({
           name: v.name.trim(),
           breedCode: v.breedCode,
@@ -147,7 +137,6 @@ export function PetEditPage() {
           photoUrl,
           note: v.note.trim() || undefined,
         });
-        if (keepLocally) await saveLocalPhoto(petKey(created.petId), keepLocally);
         const defaultMissing = !profile.data?.defaultPetId || !list.some((p) => p.petId === profile.data?.defaultPetId);
         if (defaultMissing) await usersApi.setDefaultPet(created.petId).catch(() => undefined);
         await refresh();
@@ -166,27 +155,16 @@ export function PetEditPage() {
       if (v.hasStroller !== before.hasStroller) body.hasStroller = v.hasStroller;
       if (v.vaccineCompleted !== before.vaccineCompleted) body.vaccineCompleted = v.vaccineCompleted === true;
       if (v.vaccineProofAvailable !== before.vaccineProofAvailable) body.vaccineProofAvailable = v.vaccineProofAvailable === true;
-      let photoKeptLocally = false;
       if (photo) {
-        try {
-          body.photoUrl = await petsApi.uploadPhoto(photo);
-          removeLocalPhoto(petKey(current.petId));
-        } catch (e) {
-          if (!(e instanceof PhotoUploadError)) throw e;
-          await saveLocalPhoto(petKey(current.petId), photo);
-          photoKeptLocally = true;
-        }
-      } else if (photoRemoved) {
-        if (current.photoUrl) body.photoUrl = null;
-        removeLocalPhoto(petKey(current.petId));
+        body.photoUrl = await petsApi.uploadPhoto(photo);
+      } else if (photoRemoved && current.photoUrl) {
+        body.photoUrl = null;
       }
       const nextNote = v.note.trim();
       if (nextNote !== before.note.trim()) body.note = nextNote === '' ? null : nextNote;
 
       if (Object.keys(body).length === 0) {
-        // 사진만 바꿨는데 저장소로 못 올려 이 브라우저에 담은 경우도 바뀐 것이다
-        setMessage({ ok: true, text: photoKeptLocally ? '사진을 바꿨습니다.' : '바뀐 내용이 없습니다.' });
-        if (photoKeptLocally) setPhoto(null);
+        setMessage({ ok: true, text: '바뀐 내용이 없습니다.' });
         return;
       }
       await petsApi.update(current.petId, body);
