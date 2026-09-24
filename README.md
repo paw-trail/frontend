@@ -248,6 +248,8 @@ cp .env.example .env.local
 | `VITE_FALLBACK_SIDO_CODE` | `11` | 처음 쓸 지역의 시도 코드 (서울) |
 | `VITE_FALLBACK_SIGUNGU_NAME` | `마포구` | 처음 쓸 지역의 시군구 이름 |
 
+배포 빌드는 `.env.local` 을 쓰지 않습니다. Jenkins 가 자격 증명 `frontend-env` 를 `.env.production` 으로 넣어 빌드합니다([6-4](#6-4-배포할-때)).
+
 ### 2-2. 카카오 지도 키
 
 카카오 개발자 콘솔에서 세 군데를 맞춰야 지도가 뜹니다.
@@ -315,6 +317,7 @@ src/
 | 서버 응답 모양 | `api/types.ts` | 레포 실물의 응답 DTO 이름을 주석으로 붙여 둠 |
 | 화면 문구가 되는 이름표 (판정 · 출처 · 조건 항목 이름) | `lib/labels.ts` | 같은 값을 화면마다 다르게 부르지 않게 |
 | 색 · 글자 크기 · 모서리 | `styles/index.css` 의 디자인 토큰 | Tailwind 클래스(`text-ink` · `bg-brand-soft`)로 씀 |
+| 배포 설정 | 레포 맨 위의 `Jenkinsfile` | 파이프라인 본체는 `paw-trail/jenkins-library` 에 있고, 여기서는 부르기만 함 ([6-4](#6-4-배포할-때)) |
 
 <br><br>
 
@@ -476,6 +479,50 @@ html { font-size: clamp(14.2222px, calc(100vw / 90), 16px); min-width: 1280px; }
 - ingest 의 예약 수집 스위치(`INGEST_SCHEDULE_ENABLED`)를 배포 서버에서 켭니다. 운영 화면이 「매일 04:00 에도 저절로 돕니다」라고 안내하기 때문입니다.
 - 개인정보처리방침(`/privacy`)은 로그인 없이 열려야 합니다. 구글 로그인 앱을 게시할 때 이 주소를 구글 콘솔의 브랜딩에 등록합니다.
 - `VITE_` 값은 **빌드할 때 파일에 박힙니다.** 카카오 키를 바꾸면 다시 빌드해야 합니다. 비밀값은 `VITE_` 로 두지 않습니다(누구나 화면 파일에서 읽을 수 있음).
+
+---
+
+**배포는 Jenkins 가 합니다.** main 에 릴리스 태그(`vX.Y.Z`)를 달면 Jenkins 가 2분 안에 태그를 알아채고, 빌드한 화면을 `https://paw-trail.click` 에 올립니다.
+
+**릴리스 태그는 main 에만 답니다.** 파이프라인은 태그 모양만 보고, 태그가 가리키는 커밋이 main 에 있는지는 확인하지 않습니다. 기능 브랜치에 태그를 달면 머지되지 않은 코드가 그대로 운영에 올라갑니다.
+
+```
+태그 vX.Y.Z ──▶ Jenkins ──▶ [데스크톱] npm ci · npm run build ──▶ [Lightsail] 사이트 폴더(/var/www/paw-trail)에 올림
+```
+
+| 무엇 | 어디에 |
+|---|---|
+| 파이프라인 본체 | `paw-trail/jenkins-library` 의 `vars/frontendPipeline.groovy` — 이 레포의 `Jenkinsfile` 은 그것을 부르는 한 줄입니다 |
+| 빌드 값 (`VITE_…`) | Jenkins 자격 증명 `frontend-env` — 빌드 직전에 `.env.production` 으로 넣고, 빌드가 끝나면 지웁니다 |
+| 사이트에 올리는 스크립트 | Lightsail 의 `pawtrail-frontend-deploy` — `paw-trail/infra` 의 `edge/nginx/frontend-deploy.sh` 입니다 |
+
+**카카오 키 같은 빌드 값을 바꿀 때는** Jenkins 의 `frontend-env` 파일을 고친 뒤, Jenkins 에서 그 태그의 잡을 다시 돌립니다. 새 태그를 달 필요는 없습니다.
+
+---
+
+**올리는 스크립트는 이 순서로 바꿉니다.**
+
+| 순서 | 하는 일 |
+|---|---|
+| 보관 | 지금 사이트를 `/var/www/paw-trail.previous` 로 통째로 복사합니다 |
+| 파일 | `index.html` 을 뺀 새 파일을 먼저 넣습니다. `assets/` 의 옛 파일은 지우지 않습니다 |
+| index | `index.html` 을 맨 마지막에 바꿉니다 |
+| 확인 | `https://paw-trail.click/` 이 새 `index.html` 을 내주고, 거기 적힌 파일 하나가 열리는지 봅니다. 아니면 보관본으로 되돌립니다 |
+| 정리 | `assets/` 에서 30일 넘게 수정되지 않은 파일을 지웁니다. 이번 판에 든 파일은 올릴 때 시각을 새로 찍으므로 지워지지 않습니다 |
+
+옛 `assets/` 를 남기는 것은 이미 화면을 열어 둔 사람을 위해서입니다. 그 브라우저는 옛 `index.html` 을 들고 있어서 옛 조각 파일을 부르는데, 지워 버리면 404 가 나 화면이 깨집니다. 파일 이름에 내용 해시가 붙어 있어 옛 파일과 새 파일이 섞이지 않습니다.
+
+배포 간격이 30일을 넘으면 바로 전 판의 파일도 교체와 함께 지워집니다. 그 순간 화면을 열어 두었던 사람은 새로 고침을 해야 글꼴 · 그림이 다시 나옵니다.
+
+---
+
+**Jenkins 를 쓸 수 없을 때는 손으로 올립니다.** 데스크톱에서 빌드한 `dist/` 를 Lightsail 의 `/home/ubuntu/frontend-dist-{판}` 으로 옮긴 뒤, 같은 스크립트를 부릅니다. 예를 들어 `v0.1.2` 라면 이렇습니다.
+
+```bash
+sudo pawtrail-frontend-deploy /home/ubuntu/frontend-dist-v0.1.2 v0.1.2
+```
+
+스크립트는 Jenkins 작업 폴더의 `dist` 와 `/home/ubuntu/frontend-dist-v…` 만 받습니다. 다른 폴더를 사이트에 올리지 못하게 하기 위해서입니다.
 
 <br><br>
 
@@ -650,3 +697,5 @@ html { font-size: clamp(14.2222px, calc(100vw / 90), 16px); min-width: 1280px; }
 | 스플래시 | 로그인을 확인하는 동안 잠깐 뜨는 첫 화면 (1장) |
 | 기둥 (`.shell`) | 본문을 최대 1440px 폭으로 가운데 세우는 공통 클래스 |
 | 예시 자료 | 서버 자료가 없을 때만 끼우는 「테스트」 표시가 붙은 자료 ([10장](#10-시연용-예시-자료)) |
+| 릴리스 태그 | main 에 다는 판 이름(`vX.Y.Z`) — 달면 Jenkins 가 빌드와 배포를 시작함 ([6-4](#6-4-배포할-때)) |
+| Jenkins | 태그를 보고 빌드 · 배포를 대신 돌리는 서버 — 설정은 `paw-trail/jenkins-library` · `paw-trail/infra` 에 있음 |
